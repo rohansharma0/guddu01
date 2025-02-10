@@ -1,63 +1,82 @@
 import axios from "axios";
 import React, { useState } from "react";
 
+import Stock from "../components/Stock";
+
 const Home = () => {
     //Getting company stock name from API - https://finnhub.io/api/v1/search?q=${symbol}&token=${this.token}
     //get company name from the response
     //Getting company stock quote from API - https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${this.token}
     //get cuurent price, high price, open price, todays change from the response
 
-    const [stockCode, setStockCode] = useState("");
+    const [stockList, setStockList] = useState([]);
+    // const [stockCodeList, setStockCodeList] = useState([]);
+
+    const [stock, setStock] = useState({
+        code: "",
+        name: "",
+        curPrice: 0,
+        openPrice: 0,
+        highPrice: 0,
+        changeToday: 0,
+    });
+
+    const removeStock = (stockCode) => {
+        const stList = stockList.filter((stock) => stock.code !== stockCode);
+        setStockList(stList);
+    };
 
     const API_KEY = "bu4f8kn48v6uehqi3cqg";
 
-    function handleInputChange(event) {
-        setStockCode(event.target.value);
-    }
+    const handleTrack = () => {
+        // setStockCodeList([...stockCodeList, stock.code]);
+        getStockDetails();
+    };
 
-    function handleTrack() {
-        console.log("Tracking stock code: ", stockCode);
-        getCompanyName();
-        getCompanyQuote();
-    }
-    function getCompanyName() {
-        axios
+    const getStockDetails = async () => {
+        await axios
             .get(
                 "https://finnhub.io/api/v1/search?q=" +
-                    stockCode +
+                    stock.code +
                     "&token=" +
                     API_KEY
             )
-            .then(function (response) {
-                console.log(response?.data?.result[0]?.description);
+            .then(async (response) => {
+                const st = stock;
+                st.name = response?.data?.result[0]?.description;
+                await axios
+                    .get(
+                        "https://finnhub.io/api/v1/quote?symbol=" +
+                            stock.code +
+                            "&token=" +
+                            API_KEY
+                    )
+                    .then((response) => {
+                        st.curPrice = Number(response.data.c);
+                        st.openPrice = Number(response.data.o);
+                        st.highPrice = Number(response.data.h);
+                        st.changeToday = Number(response.data.dp);
+                        setStockList([...stockList, st]);
+                    })
+                    .catch(function (error) {
+                        console.log(error);
+                    });
             })
             .catch(function (error) {
                 console.log(error);
             });
-    }
-    function getCompanyQuote() {
-        axios
-            .get(
-                "https://finnhub.io/api/v1/quote?symbol=" +
-                    stockCode +
-                    "&token=" +
-                    API_KEY
-            )
-            .then(function (response) {
-                console.log("Current Price - " + response.data.c);
-                console.log("Opening Price - " + response.data.o);
-                console.log("High Price Of The Day - " + response.data.h);
-                console.log("Percent Change - " + response.data.dp);
-            })
-            .catch(function (error) {
-                console.log(error);
-            });
-    }
+    };
 
     return (
         <div>
-            <input type="text" onChange={handleInputChange} />
+            <input
+                type="text"
+                onChange={(e) => setStock({ ...stock, code: e.target.value })}
+            />
             <button onClick={handleTrack}>Track</button>
+            {stockList.map((st, i) => {
+                return <Stock key={i} stock={st} remove={removeStock} />;
+            })}
         </div>
     );
 };
