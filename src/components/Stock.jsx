@@ -2,6 +2,7 @@ import React from "react";
 
 import decreaseIcon from "../assets/decrease.png";
 import increaseIcon from "../assets/increase.png";
+import { Link } from "react-router";
 
 const Stock = (props) => {
     return (
@@ -28,6 +29,9 @@ const Stock = (props) => {
             <button onClick={() => props.remove(props.stock.code)}>
                 Delete
             </button>
+            <Link to={"/sentiment/" + props.stock.code}>
+                See sentiments details
+            </Link>
         </div>
     );
 };
